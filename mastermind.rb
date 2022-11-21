@@ -17,7 +17,7 @@ class Human_solver
 end
 
 class Game
-    attr_reader :machine_code, :guess_arr
+    attr_reader :machine_code, :guess_arr, :right_indexes
 
     def initialize
         @machine_code = MachineCodeMaker.new.machine_code
@@ -35,6 +35,10 @@ class Game
     end
 
     def check_index
+        @right_indexes = 0
+        for i in 0..3
+            @guess_arr[i] == @machine_code[i] ? @right_indexes += 1 : next
+        end
     end
 
     def check_guess
@@ -63,3 +67,5 @@ new_game.get_human_code
 p new_game.machine_code
 p new_game.guess_arr
 p new_game.check_number
+new_game.check_index
+p new_game.right_indexes

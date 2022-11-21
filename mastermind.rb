@@ -7,59 +7,43 @@ class Display
         @intro_message = "Enter the 4 digit code. Digits have to be from 1-6."
     end
 
-end
-
-class Human_solver
-    attr_reader :guess_arr, :code_guess
-
-    def initialize
-        @code_guess = 0
+    def not_enough_digits
+        puts "The code has to contain 4 digits, try again"
     end
-end
 
-class HumanCodemaker
-    def initialize
-        puts "Create the code using digits from 1 to 6 only and 4 digits length"
-        @human_code = gets.chomp.to_i.digits.reverse
+    def incorrect_digits
+        puts "The code can only contain digits from 1 to 6 both included. Try again"
     end
+
 end
 
 class Game
-    attr_reader :machine_code, :guess_arr, :right_indexes, :round_counter, :human_code
+    attr_reader :right_indexes, :round_counter, :codemaker_code, :codebreaker_guess
 
     @@end_game = false
 
     def initialize
-        @human_code = HumanCodemaker.new.human_code
-        @machine_code = MachineCodeMaker.new.machine_code
-        @guess_arr = []
+        @codebreaker_guess = []
         @intro_message = Display.new.human_set_code
         @round_counter = 1
         @code_history_arr = []
-        @code_guess = Human_solver.new.code_guess
+        @display = Display.new
     end
 
-    # gets the code from human with restrictions (only digits 1-6 and 4 digit length)
-    def get_human_code
-        @code_guess = gets.chomp.to_i
-        @guess_arr = @code_guess.digits.reverse
-        if @guess_arr.length < 4 || @guess_arr > 4
-            puts "The code has to contain 4 digits, try again"
-            get_human_code
-        elsif (@guess_arr - [0, 7, 8, 9]).length < 4
-            puts "The code can only contain digits from 1 to 6 both included. Try again"
-            get_human_code
+    def codemaker_restrictions
+        if @codemaker_code.length > 4 || @codemaker_code.length < 4
+            @display.not_enough_digits
         end
     end
 
     def check_number
-        @right_numbers = 4 - (@guess_arr - @machine_code).length
+        @right_numbers = 4 - (@codebreaker_guess - @codemaker_code).length
     end
 
     def check_index
         @right_indexes = 0
         for i in 0..3
-            @guess_arr[i] == @machine_code[i] ? @right_indexes += 1 : next
+            @codebreaker_guess[i] == @codemaker_code[i] ? @right_indexes += 1 : next
         end
     end
 
@@ -69,7 +53,7 @@ class Game
     end
 
     def give_feedback
-        puts "You have #{@right_numbers} right digits and #{@right_indexes} are in the right position"
+        puts "\nYou have #{@right_numbers} right digits and #{@right_indexes} are in the right position"
     end
 
     def game_over
@@ -78,7 +62,7 @@ class Game
             @@end_game = true
             return
         elsif @round_counter == 12
-            puts "\nYou lose. The code was #{@machine_code}"
+            puts "\nYou lose. The code was #{@codemaker_code}"
             @@end_game = true
             return
         else
@@ -86,16 +70,8 @@ class Game
         end
     end
 
-    def round
-        round_message
-        get_human_code
-        check_guess
-        give_feedback
-        game_over
-    end
-
     def play
-        puts @machine_code
+        @round_counter = 1
         while @@end_game == false do
             round
         end
@@ -103,7 +79,7 @@ class Game
     end
 
     def round_message
-        puts "\nRound ##{@round_counter}: Enter a 4 digit code. Digits have to be from 1-6"
+        puts "\nPlayer's round ##{@round_counter}: Enter a 4 digit code. Digits have to be from 1-6"
     end
 
     def play_again
@@ -116,12 +92,57 @@ class Game
 
 end
 
-class MachineCodeMaker
-    attr_reader :machine_code
-
-    def initialize
-        @machine_code = Array.new(4) {rand(1...6)}
-    end
+class MachineCodeBreaker
 end
 
-Game.new.human_code
+class PlayerCodeMakerGame < Game
+    def initialize
+        super
+        puts "Create the code using digits from 1 to 6 only and 4 digits length"
+        @codemaker_code = gets.chomp.to_i.digits.reverse
+    end
+
+    def get_guess
+        @codebreaker_guess = Array.new(4) {rand(1...6)}
+        puts "\nComputer's round ##{round_counter}: #{@codebreaker_guess}"
+    end
+
+    def round
+        get_guess
+        check_guess
+        give_feedback
+        sleep(1)
+        game_over
+    end
+
+end
+
+class PlayerCodeBreakerGame < Game
+    def initialize
+        super
+        @codemaker_code = Array.new(4) {rand(1...6)}
+    end
+
+    # gets the code from human with restrictions (only digits 1-6 and 4 digit length)
+    def get_guess
+        @codebreaker_guess = gets.chomp.to_i.digits.reverse
+        if @codebreaker_guess.length < 4 || @codebreaker_guess.length > 4
+            @display.not_enough_digits
+            get_guess
+        elsif (@codebreaker_guess - [0, 7, 8, 9]).length < 4
+            @display.incorrect_digits
+            get_guess
+        end
+    end
+
+    def round
+        round_message
+        get_guess
+        check_guess
+        give_feedback
+        game_over
+    end
+
+end
+
+PlayerCodeBreakerGame.new.play

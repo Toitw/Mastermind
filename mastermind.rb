@@ -3,8 +3,11 @@ class Display
     def initialize
     end
 
-    def human_set_code
-        @intro_message = "Enter the 4 digit code. Digits have to be from 1-6."
+    def intro_message
+        puts "Welcome! The game consists in decipher the code. There is a codemaker and a codebreaker.\n\nThe codemaker will give hints after each"\
+        " attempt from the codebreaker. The hints will tell how many numbers are correct, and how many are in the correct position.\n\n"\
+        "The codebreaker has 12 turns to decipher the code. But first, do you want to be codemaker or codebreaker?\n\n"\
+        "For playing as a codemaker enter '1'. To be the codebreaker, enter '2'."
     end
 
     def not_enough_digits
@@ -18,16 +21,29 @@ class Display
 end
 
 class Game
-    attr_reader :right_indexes, :round_counter, :codemaker_code, :codebreaker_guess
+    attr_reader :right_indexes, :round_counter, :codemaker_code, :codebreaker_guess, :intro_message, :choose_game
 
     @@end_game = false
 
     def initialize
         @codebreaker_guess = []
-        @intro_message = Display.new.human_set_code
+        Display.new.intro_message
         @round_counter = 1
         @code_history_arr = []
         @display = Display.new
+        choose_game
+    end
+
+    def choose_game
+        @choose_game = gets.chomp.to_i
+        if @choose_game == 1
+            PlayerCodeMakerGame.new.play
+        elsif @choose_game == 2
+            PlayerCodeBreakerGame.new.play
+        else
+            puts "Please, choose between 1 or 2 to play"
+            choose_game
+        end
     end
 
     def codemaker_restrictions
@@ -86,7 +102,7 @@ class Game
         puts "\nWould you like to play again? Press 'y' if you want to continue, else press any other key."
         if gets.chomp == "y"
             @@end_game = false
-            play
+            Game.new.play
         end
     end
 
@@ -97,8 +113,7 @@ end
 
 class PlayerCodeMakerGame < Game
     def initialize
-        super
-        puts "Create the code using digits from 1 to 6 only and 4 digits length"
+        puts "\nCreate the code using digits from 1 to 6 only and 4 digits length"
         @codemaker_code = gets.chomp.to_i.digits.reverse
     end
 
@@ -119,7 +134,6 @@ end
 
 class PlayerCodeBreakerGame < Game
     def initialize
-        super
         @codemaker_code = Array.new(4) {rand(1...6)}
     end
 
@@ -145,4 +159,4 @@ class PlayerCodeBreakerGame < Game
 
 end
 
-PlayerCodeBreakerGame.new.play
+Game.new.play

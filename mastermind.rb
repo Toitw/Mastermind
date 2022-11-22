@@ -1,3 +1,5 @@
+require "colorize"
+
 class Display
     attr_accessor :intro_message, 
     def initialize
@@ -108,10 +110,9 @@ class Game
 
 end
 
-class MachineCodeBreaker
-end
-
 class PlayerCodeMakerGame < Game
+    attr_reader :posible_comb, :codemaker_code
+
     def initialize
         puts "\nCreate the code using digits from 1 to 6 only and 4 digits length"
         @codemaker_code = gets.chomp.to_i.digits.reverse
@@ -133,8 +134,11 @@ class PlayerCodeMakerGame < Game
 end
 
 class PlayerCodeBreakerGame < Game
+    attr_reader :posible_comb, :codemaker_code
+
     def initialize
         @codemaker_code = Array.new(4) {rand(1...6)}
+        @posible_comb = (1111..6666).to_a
     end
 
     # gets the code from human with restrictions (only digits 1-6 and 4 digit length)

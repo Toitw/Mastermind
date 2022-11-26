@@ -24,7 +24,7 @@ class Display
 end
 
 class Game
-    attr_reader :right_indexes, :round_counter, :codemaker_code, :codebreaker_guess, :intro_message, :choose_game, :temporal_breaker_arr, :temporal_maker_arr
+    attr_reader :right_indexes, :round_counter, :codemaker_code, :codebreaker_guess, :intro_message, :choose_game, :temporal_breaker_arr, :temporal_maker_arr, :display
 
     @@end_game = false
 
@@ -54,8 +54,9 @@ class Game
     end
 
     def codemaker_restrictions
-        if @codemaker_code.length > 4 || @codemaker_code.length < 4
+        if @codemaker_code.length > 4 || @codemaker_code.length < 4 || @codebreaker_guess.length > 4 || @codebreaker_guess.length < 4
             @display.not_enough_digits
+            get_guess
         end
     end
 
@@ -84,10 +85,6 @@ class Game
                 @temporal_maker_arr[i] = 7
             end
         end
-        puts "this is temporal breaker #{@temporal_breaker_arr}"
-        puts "this is temporal maker #{@temporal_maker_arr}"
-        puts "this is breaker code #{@codebreaker_guess}"
-        puts "this is maker code #{@codemaker_code}"
         indexes
     end
 
@@ -143,7 +140,7 @@ class PlayerCodeMakerGame < Game
     def initialize
         puts "\nCreate the code using digits from 1 to 6 only and 4 digits length"
         @codemaker_code = gets.chomp.to_i.digits.reverse
-        @posible_comb = (1..2).to_a 
+        @posible_comb = (1..6).to_a 
         @posible_comb = @posible_comb.repeated_permutation(4).to_a
         @codebreaker_guess = [1, 1, 2, 2]
     end
@@ -152,9 +149,9 @@ class PlayerCodeMakerGame < Game
         if @round_counter == 1
             puts "\nComputer's round ##{round_counter}: #{@codebreaker_guess}"
         else
-            @posible_comb.select! {|comb| check_index(comb, @codemaker_code) == @right_indexes && check_number(comb, @codemaker_code) == @right_numbers}
+            @posible_comb.delete(@codebreaker_guess)
+            @posible_comb.select! {|comb| check_index(comb, @codebreaker_guess) == @right_indexes && check_number(@temporal_breaker_arr, @temporal_maker_arr) == @right_numbers}
             @codebreaker_guess = @posible_comb[0]
-            p @posible_comb
             puts "\nComputer's round ##{round_counter}: #{@codebreaker_guess}"
         end
     end
@@ -170,7 +167,7 @@ class PlayerCodeMakerGame < Game
 end
 
 class PlayerCodeBreakerGame < Game
-    attr_accessor :codemaker_code, :right_indexes
+    attr_reader :codemaker_code, :right_indexes, :display
 
     def initialize
         @codemaker_code = Array.new(4) {rand(1...6)}
@@ -179,13 +176,7 @@ class PlayerCodeBreakerGame < Game
     # gets the code from human with restrictions (only digits 1-6 and 4 digit length)
     def get_guess
         @codebreaker_guess = gets.chomp.to_i.digits.reverse
-        if @codebreaker_guess.length < 4 || @codebreaker_guess.length > 4
-            @display.not_enough_digits
-            get_guess
-        elsif (@codebreaker_guess - [0, 7, 8, 9]).length < 4
-            @display.incorrect_digits
-            get_guess
-        end
+        codemaker_restrictions
     end
 
     def round

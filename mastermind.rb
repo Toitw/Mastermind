@@ -1,28 +1,6 @@
 require "colorize"
 require 'pry-byebug'
 
-class Display
-    attr_reader :intro_message, 
-    def initialize
-    end
-
-    def intro_message
-        puts "Welcome! The game consists in decipher the code. There is a codemaker and a codebreaker.\n\nThe codemaker will give hints after each"\
-        " attempt from the codebreaker. The hints will tell how many numbers are correct, and how many are in the correct position.\n\n"\
-        "The codebreaker has 12 turns to decipher the code. But first, do you want to be codemaker or codebreaker?\n\n"\
-        "For playing as a codemaker enter '1'. To be the codebreaker, enter '2'."
-    end
-
-    def not_enough_digits
-        puts "The code has to contain 4 digits, try again"
-    end
-
-    def incorrect_digits
-        puts "The code can only contain digits from 1 to 6 both included. Try again"
-    end
-
-end
-
 class Game
     attr_reader :right_indexes, :round_counter, :codemaker_code, :codebreaker_guess, :intro_message, :choose_game, :temporal_breaker_arr, :temporal_maker_arr, :display
 
@@ -34,14 +12,24 @@ class Game
         @temporal_breaker_arr = []
         @temporal_maker_arr = []
         @codebreaker_guess = []
-        Display.new.intro_message
         @round_counter = 1
         @code_history_arr = []
-        @display = Display.new
         choose_game
     end
 
+    def intro_message
+        puts "Welcome! The game consists in decipher the code. There is a codemaker and a codebreaker.\n\nThe codemaker will give hints after each"\
+        " attempt from the codebreaker. The hints will tell how many numbers are correct, and how many are in the correct position.\n\n"\
+        "The codebreaker has 12 turns to decipher the code. But first, do you want to be codemaker or codebreaker?\n\n"\
+        "For playing as a codemaker enter '1'. To be the codebreaker, enter '2'.".on_green
+    end
+
+    def incorrect_digits
+        puts "The code has to contain 4 digits from 1 to 6 both included, try again".on_red
+    end
+
     def choose_game
+        intro_message
         @choose_game = gets.chomp.to_i
         if @choose_game == 1
             PlayerCodeMakerGame.new.play
@@ -50,13 +38,6 @@ class Game
         else
             puts "Please, choose between 1 or 2 to play"
             choose_game
-        end
-    end
-
-    def codemaker_restrictions
-        if @codemaker_code.length > 4 || @codemaker_code.length < 4 || @codebreaker_guess.length > 4 || @codebreaker_guess.length < 4
-            @display.not_enough_digits
-            get_guess
         end
     end
 
@@ -90,7 +71,6 @@ class Game
 
     def check_guess
         @right_indexes = check_index(@codebreaker_guess, @codemaker_code)
-        puts @right_indexes
         @right_numbers = check_number(@temporal_breaker_arr, @temporal_maker_arr)
     end
 
@@ -100,12 +80,11 @@ class Game
 
     def game_over
         if @right_indexes == 4
-            puts "\nCongratulations, you broke the code!"
+            puts "\nCongratulations, you broke the code!".on_blue
             @@end_game = true
             return
         elsif @round_counter == 12
-            puts "\nYou lose. The code was #{@codemaker_code}"
-            @@end_game = true
+            puts "\nYou lose. The code was #{@codemaker_code}".on_purple
             return
         else
             @round_counter += 1
@@ -140,6 +119,7 @@ class PlayerCodeMakerGame < Game
     def initialize
         puts "\nCreate the code using digits from 1 to 6 only and 4 digits length"
         @codemaker_code = gets.chomp.to_i.digits.reverse
+        code_restrictions
         @posible_comb = (1..6).to_a 
         @posible_comb = @posible_comb.repeated_permutation(4).to_a
         @codebreaker_guess = [1, 1, 2, 2]
@@ -164,6 +144,16 @@ class PlayerCodeMakerGame < Game
         game_over
     end
 
+    def code_restrictions
+        if @codemaker_code.length > 4 || @codemaker_code.length < 4
+            incorrect_digits
+            initialize
+        elsif (@codemaker_code - [0, 7, 8, 9]).length < 4
+            incorrect_digits
+            initialize
+        end
+    end
+
 end
 
 class PlayerCodeBreakerGame < Game
@@ -176,7 +166,7 @@ class PlayerCodeBreakerGame < Game
     # gets the code from human with restrictions (only digits 1-6 and 4 digit length)
     def get_guess
         @codebreaker_guess = gets.chomp.to_i.digits.reverse
-        codemaker_restrictions
+        code_restrictions
     end
 
     def round
@@ -185,6 +175,16 @@ class PlayerCodeBreakerGame < Game
         check_guess
         give_feedback
         game_over
+    end
+
+    def code_restrictions
+        if @codebreaker_guess.length > 4 || @codebreaker_guess.length < 4
+            incorrect_digits
+            get_guess
+        elsif (@codebreaker_guess - [0, 7, 8, 9]).length < 4
+            incorrect_digits
+            get_guess
+        end
     end
 
 end

@@ -1,7 +1,8 @@
 require "colorize"
+require 'pry-byebug'
 
 class Display
-    attr_accessor :intro_message, 
+    attr_reader :intro_message, 
     def initialize
     end
 
@@ -23,11 +24,15 @@ class Display
 end
 
 class Game
-    attr_reader :right_indexes, :round_counter, :codemaker_code, :codebreaker_guess, :intro_message, :choose_game
+    attr_reader :right_indexes, :round_counter, :codemaker_code, :codebreaker_guess, :intro_message, :choose_game, :temporal_breaker_arr, :temporal_maker_arr
 
     @@end_game = false
 
     def initialize
+        @right_indexes = 0
+        @right_numbers = 0
+        @temporal_breaker_arr = []
+        @temporal_maker_arr = []
         @codebreaker_guess = []
         Display.new.intro_message
         @round_counter = 1
@@ -54,20 +59,42 @@ class Game
         end
     end
 
-    def check_number
-        @right_numbers = 4 - (@codebreaker_guess - @codemaker_code).length
+    def check_number(breakercode, makercode)
+        right_numbers = 0
+        breakercode.map {|digit|
+          for i in 0...makercode.length
+            if digit == makercode[i]
+              right_numbers += 1
+              makercode[i] = 8
+              break
+            end
+          end
+        }
+        right_numbers
     end
 
-    def check_index
-        @right_indexes = 0
+    def check_index(breaker_arr, maker_arr)
+        indexes = 0
+        @temporal_breaker_arr = breaker_arr.map {|digit| digit}
+        @temporal_maker_arr = maker_arr.map {|digit| digit}
         for i in 0..3
-            @codebreaker_guess[i] == @codemaker_code[i] ? @right_indexes += 1 : next
+            if breaker_arr[i] == maker_arr[i]
+                indexes += 1
+                @temporal_breaker_arr[i] = 0
+                @temporal_maker_arr[i] = 7
+            end
         end
+        puts "this is temporal breaker #{@temporal_breaker_arr}"
+        puts "this is temporal maker #{@temporal_maker_arr}"
+        puts "this is breaker code #{@codebreaker_guess}"
+        puts "this is maker code #{@codemaker_code}"
+        indexes
     end
 
     def check_guess
-        check_number
-        check_index
+        @right_indexes = check_index(@codebreaker_guess, @codemaker_code)
+        puts @right_indexes
+        @right_numbers = check_number(@temporal_breaker_arr, @temporal_maker_arr)
     end
 
     def give_feedback
@@ -111,16 +138,25 @@ class Game
 end
 
 class PlayerCodeMakerGame < Game
-    attr_reader :posible_comb, :codemaker_code
+    attr_reader :posible_comb, :codemaker_code, :guess_list
 
     def initialize
         puts "\nCreate the code using digits from 1 to 6 only and 4 digits length"
         @codemaker_code = gets.chomp.to_i.digits.reverse
+        @posible_comb = (1..2).to_a 
+        @posible_comb = @posible_comb.repeated_permutation(4).to_a
+        @codebreaker_guess = [1, 1, 2, 2]
     end
 
-    def get_guess
-        @codebreaker_guess = Array.new(4) {rand(1...6)}
-        puts "\nComputer's round ##{round_counter}: #{@codebreaker_guess}"
+    def get_guess #el problema está aquí y en Round, revisar
+        if @round_counter == 1
+            puts "\nComputer's round ##{round_counter}: #{@codebreaker_guess}"
+        else
+            @posible_comb.select! {|comb| check_index(comb, @codemaker_code) == @right_indexes && check_number(comb, @codemaker_code) == @right_numbers}
+            @codebreaker_guess = @posible_comb[0]
+            p @posible_comb
+            puts "\nComputer's round ##{round_counter}: #{@codebreaker_guess}"
+        end
     end
 
     def round
@@ -134,11 +170,10 @@ class PlayerCodeMakerGame < Game
 end
 
 class PlayerCodeBreakerGame < Game
-    attr_reader :posible_comb, :codemaker_code
+    attr_accessor :codemaker_code, :right_indexes
 
     def initialize
         @codemaker_code = Array.new(4) {rand(1...6)}
-        @posible_comb = (1111..6666).to_a
     end
 
     # gets the code from human with restrictions (only digits 1-6 and 4 digit length)
